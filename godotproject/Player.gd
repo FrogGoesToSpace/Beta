@@ -17,6 +17,8 @@ export (float) var hop_sound_timer_period = 0.2
 # in the code below for more detail
 export (float) var hop_sound_timer_period_variance = 0.1
 
+onready var animation_tree = get_node("AnimationTree")
+onready var animation_mode = animation_tree.get("parameters/playback")
 
 var velocity = Vector2.ZERO
 var jump_frame_countdown = 0
@@ -96,9 +98,17 @@ func _draw():
 	# THIS IS JUST DEBUG
 	# TODO: Remove
 	# Draw swinging velocity vector
+	#if $PlayerTongue.shooting:
+	#	#frog_pos = get_global_transform().xform(Vector2.ZERO)
+	#	draw_line($Sprite.position, $Sprite.position + $PlayerTongue.globalposition, Color(1,0,0))
+	
 	if $PlayerTongue.swinging:
-		var tgt = Vector2.DOWN.rotated(swing_angle) * swing_angular_speed * 100
-		draw_line(Vector2(0,0), tgt, Color(1,0,0))
+		#var frog_pos = get_global_transform().xform(Vector2.ZERO)
+		draw_line(Vector2(0,0), Vector2(0,0) - swing_pivot_position, Color(1,0,0))
+		
+		#print(swing_pivot_position)
+		#var tgt = Vector2.DOWN.rotated(swing_angle) * swing_angular_speed * 100
+		#draw_line(Vector2(0,0), tgt, Color(1,0,0))
 
 func do_movement(delta):
 	if $PlayerTongue.swinging:
@@ -116,7 +126,7 @@ func do_movement(delta):
 		# 	var frog_pos = get_global_transform().xform(Vector2.ZERO)
 		# 	var swing_vec = frog_pos - swing_pivot_position
 		# 	swing_radius = swing_vec.length()
-
+		
 
 		swing_angular_speed += 1 / swing_radius * gravity * cos(swing_angle) * delta
 
@@ -130,10 +140,14 @@ func do_movement(delta):
 		# Instead of the direct position calculation, we can set velocity, and use move_and_collide
 		velocity = Vector2.DOWN.rotated(swing_angle) * swing_angular_speed * swing_radius
 		var collision_info = move_and_collide(velocity * delta)
+		
 		if collision_info:
 			print_debug('Collide while swinging with ', collision_info.collider.name)
 			swing_angular_speed *= -0.95
 			# TODO: ^^^ Add some dampening since not every collision is perfectly elastic
+			
+		animation_tree.set('parameters/swing/blend_position', velocity.normalized())
+		animation_mode.travel("swing")
 	else:
 		# Set X velocity based on user input
 		# TODO: maybe do this differently? give the frog a little X momentum?
@@ -149,8 +163,10 @@ func do_movement(delta):
 		if jump_frame_countdown > 0:
 			jump_frame_countdown -= delta
 			velocity.y = jump_speed
+			
 		velocity.y = max(min(velocity.y, 1200), -1200)
 		velocity = move_and_slide(velocity, Vector2.UP)
+<<<<<<< HEAD
 		# Count down the hop sound timer, ensuring it never goes below 0.
 		hop_sound_timer = max(hop_sound_timer - delta, 0)
 		# Play sound effect when timer has expired and frog is walking on floor.
@@ -162,6 +178,33 @@ func do_movement(delta):
 			hop_sound_timer = hop_sound_timer_period * (1 + rand_range(0, hop_sound_timer_period_variance))
 			# Play sound effect.
 			$HopSoundPlayer.play(0)
+=======
+		
+		if jump_pressed or jump_held:
+			if velocity.x < 0:
+				animation_tree.set('parameters/Land/blend_position', velocity.normalized())
+				animation_tree.set('parameters/Idle/blend_position', velocity.normalized())
+				animation_mode.travel("Land")
+			if velocity.x > 0:	
+				animation_tree.set('parameters/Launch/blend_position', velocity.normalized())
+				animation_tree.set('parameters/Idle/blend_position', velocity.normalized())
+				animation_mode.travel("Launch")
+				
+		elif velocity.y == 0:
+			animation_tree.set('parameters/Hop/blend_position', velocity.normalized())
+			animation_tree.set('parameters/Idle/blend_position', velocity.normalized())
+			animation_mode.travel("Hop")
+		elif velocity.y != 0:
+			animation_mode.travel("Idle")
+			
+	if tongue_pressed or tongue_held:
+		if $PlayerTongue.swinging:
+			animation_tree.set('parameters/tongue_retract/blend_position', velocity.normalized())
+			animation_mode.travel("tongue_retract")
+		else:
+			animation_tree.set('parameters/tongue_launch/blend_position', velocity.normalized())
+			animation_mode.travel("tongue_launch")#emit_signal("tongue_start", get_tongue_direction())		
+>>>>>>> add basic player animations
 	pass
 
 func update_anim():
@@ -209,7 +252,6 @@ func _physics_process(delta):
 			stop_swing()
 		else:
 			emit_signal("tongue_start", get_tongue_direction())
-
 func die():
 	print_debug("ded")
 	get_tree().reload_current_scene()
