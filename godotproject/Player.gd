@@ -166,7 +166,7 @@ func do_movement(delta):
 			
 		velocity.y = max(min(velocity.y, 1200), -1200)
 		velocity = move_and_slide(velocity, Vector2.UP)
-<<<<<<< HEAD
+
 		# Count down the hop sound timer, ensuring it never goes below 0.
 		hop_sound_timer = max(hop_sound_timer - delta, 0)
 		# Play sound effect when timer has expired and frog is walking on floor.
@@ -178,7 +178,6 @@ func do_movement(delta):
 			hop_sound_timer = hop_sound_timer_period * (1 + rand_range(0, hop_sound_timer_period_variance))
 			# Play sound effect.
 			$HopSoundPlayer.play(0)
-=======
 		
 		if jump_pressed or jump_held:
 			if velocity.x < 0:
@@ -204,8 +203,7 @@ func do_movement(delta):
 		else:
 			animation_tree.set('parameters/tongue_launch/blend_position', velocity.normalized())
 			animation_mode.travel("tongue_launch")#emit_signal("tongue_start", get_tongue_direction())		
->>>>>>> add basic player animations
-	pass
+
 
 func update_anim():
 	var facing_lock = $PlayerTongue.shooting
